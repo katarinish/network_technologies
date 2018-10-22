@@ -1,4 +1,6 @@
 import java.net.*;
+import java.util.Scanner;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -18,7 +20,6 @@ public class Node {
     private int lostPercentage;
 
     private LinkedBlockingQueue<Message> messagesToSend;
-    private ConcurrentHashMap<String, Message> messagesToBeConfirmed;
 
     Node(String nodeName, int lostPercentage, int port) throws UnknownHostException, SocketException {
         this.nodeName = nodeName;
@@ -27,7 +28,6 @@ public class Node {
 
         this.lostPercentage = lostPercentage;
         this.messagesToSend = new LinkedBlockingQueue<>(1000);
-        this.messagesToBeConfirmed = new ConcurrentHashMap<>(1000);
 
         this.port = port;
         this.ipAddress = InetAddress.getLocalHost();
@@ -41,10 +41,37 @@ public class Node {
         neighbors.put(parent.getId(), parent);
     }
 
-    void startMessaging(){
-        receiver = new Receiver(socket);
-        receiver.start();
-        sender = new Sender(socket);
-        sender.start();
-    };
+    public void startMessaging(){
+        try {
+            receiver = new Receiver(socket);
+            receiver.start();
+            sender = new Sender(socket, lostPercentage, messagesToSend, neighbors);
+            sender.start();
+
+            startSendingMessages();
+        } catch (InterruptedException e) {
+            System.out.println("Thread was interrupted. Closing socket...");
+            receiver.interrupt();
+            sender.interrupt();
+            if(socket != null) { socket.close(); }
+        }
+    }
+
+    private void startSendingMessages() throws InterruptedException {
+        Scanner scanner = new Scanner(System.in);
+
+        String enteredText;
+        String uuid;
+        Message msgToSend;
+
+        while(!Thread.currentThread().isInterrupted()) {
+            System.out.println("Введите сообщение: ");
+            enteredText = scanner.nextLine();
+            uuid = UUID.randomUUID().toString();
+
+            msgToSend = new Message(enteredText, uuid, this.nodeName);
+            messagesToSend.put(msgToSend);
+        }
+
+    }
 }
