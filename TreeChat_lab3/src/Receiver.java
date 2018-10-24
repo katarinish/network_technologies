@@ -15,6 +15,8 @@ public class Receiver extends Thread implements ConnectionListener {
 
     private ConcurrentHashMap<String, NodeInfo> neighbors;
 
+    private DeliveryHandler deliveryHandler = null;
+
     private Random randomizer;
     private int lostPercentage = 0;
 
@@ -25,7 +27,7 @@ public class Receiver extends Thread implements ConnectionListener {
              ConcurrentHashMap<String, Long> messagesToBeConfirmed,
              ConcurrentHashMap<String, DatagramPacket> sentMessages) {
         this.socket = socket;
-        this.messagePacket = new DatagramPacket(new byte[MessageInfo.BUFF_SIZE], MessageInfo.BUFF_SIZE);
+        this.messagePacket = new DatagramPacket(new byte[Settings.BUFF_SIZE], Settings.BUFF_SIZE);
 
         this.acceptedMessages = new HashMap<>(10000);
         this.sentMessages = sentMessages;
@@ -40,6 +42,9 @@ public class Receiver extends Thread implements ConnectionListener {
 
     @Override
     public void run() {
+        this.deliveryHandler = new DeliveryHandler(sentMessages,acceptedMessages,messagesToBeConfirmed, neighbors,socket);
+        deliveryHandler.start();
+
         startReceivingMessages();
     }
 
