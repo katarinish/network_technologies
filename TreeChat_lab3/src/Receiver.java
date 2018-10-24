@@ -79,13 +79,27 @@ public class Receiver extends Thread implements ConnectionListener {
                 parseAsConfirmationMessage(incomingMessage, messagePacket);
                 break;
             case I_AM_YOUR_SON:
-                parseAsJoiningMessage();
+                parseAsJoiningMessage(incomingMessage, messagePacket,cameFromPort, cameFromAddress);
                 break;
         }
     }
 
-    private void parseAsJoiningMessage() {
+    private void parseAsJoiningMessage(Message incomingMessage, DatagramPacket messagePacket,
+                 int cameFromPort, InetAddress cameFromAddress) throws IOException {
+        String msgUuid = incomingMessage.getUuid();
 
+        if(!acceptedMessages.containsKey(msgUuid)) {
+            System.out.println("********************");
+            System.out.println("New child: " + incomingMessage.getSenderName()
+                    + " was joined to the tree.");
+            System.out.println("********************");
+
+            NodeInfo newChild = new NodeInfo(cameFromPort, cameFromAddress);
+            neighbors.put(newChild.getId(), newChild);
+        }
+
+        acceptedMessages.put(msgUuid, System.currentTimeMillis());
+        sendConfirmation(incomingMessage, cameFromPort, cameFromAddress);
     }
 
     private void parseAsConfirmationMessage(Message incomingMessage, DatagramPacket messagePacket) {

@@ -5,30 +5,34 @@ import java.io.*;
 public class Main {
 
     public static void main(String[] args) {
+        System.out.println("Expected 3 obligated arguments: nodeName, lossPercentage, selfPort");
+        System.out.println("Other 2 arguments are optional: parentPort, parentAddress");
 
-        Message newMsg = new Message("Hello world", "1", "Katarina", MessageType.TEXT_MESSAGE);
+        if (args.length < 3) {
+            System.out.println("Not enough arguments");
+            return;
+        }
+
+        Node node;
+
+        String nodeName = args[0];
+        int lossPercentage = Integer.valueOf(args[1]);
+        int selfport = Integer.valueOf(args[2]);
+
         try {
-            byte[] data = BytesUtil.toByteArray(newMsg);
-            Message unserialized = (Message)BytesUtil.toObject(data);
+            if (args.length == 5) {
+                int parentPort = Integer.valueOf(args[3]);
+                String parentAddr = args[4];
 
-            MessageType msgType = MessageType.CONFIRMATION;
-
-            switch (msgType) {
-                case TEXT_MESSAGE:
-                    System.out.println("ЭТО ТЕКСТОВОЕ СООБЩЕНИЕ");
-                    break;
-                case CONFIRMATION:
-                    System.out.println("ЭТО ПОДТВЕРЖДЕНИЕ СООБЩЕНИЯ");
-                    break;
+                node = new Node(nodeName, lossPercentage, selfport, parentAddr, parentPort);
+                node.startMessaging(true);
+            } else {
+                node = new Node(nodeName, lossPercentage, selfport);
+                node.startMessaging(false);
             }
 
-
-            System.out.println(data.length);
-            System.out.println(unserialized);
         } catch (IOException e) {
             System.out.println("Something went wrong");
-        } catch (ClassNotFoundException e) {
-            System.out.println("Something went wrong!!");
         }
 
     }
