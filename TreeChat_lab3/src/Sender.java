@@ -8,22 +8,27 @@ public class Sender extends Thread implements ConnectionListener {
     private DatagramSocket socket = null;
     private DatagramPacket messagePacket = null;
 
+
+    //String: UUID+InetAddress+Port  DatagramPacket: messagePacket
+    private ConcurrentHashMap<String, DatagramPacket> sentMessages;
+    //String: UUID+InetAddress+Port  Long: current time of sending msg
+    private ConcurrentHashMap<String, Long> messagesToBeConfirmed;
     private LinkedBlockingQueue<Message> messagesToSend;
-    private ConcurrentHashMap<String, DatagramPacket> messagesToBeConfirmed;
 
     private ConcurrentHashMap<String, NodeInfo> neighbors;
 
-    private int lostPercentage = 0;
-
     Sender(DatagramSocket socket,
-           int lostPercentage,
            LinkedBlockingQueue<Message> messagesToSend,
-           ConcurrentHashMap<String, NodeInfo> neighbors) {
+           ConcurrentHashMap<String, NodeInfo> neighbors,
+           ConcurrentHashMap<String, Long> messagesToBeConfirmed,
+           ConcurrentHashMap<String, DatagramPacket> sentMessages) {
 
         this.socket = socket;
-        this.lostPercentage = lostPercentage;
+
         this.messagesToSend = messagesToSend;
-        this.messagesToBeConfirmed = new ConcurrentHashMap<>(1000);
+        this.messagesToBeConfirmed = messagesToBeConfirmed;
+        this.sentMessages = sentMessages;
+
         this.neighbors = neighbors;
     }
 
@@ -32,7 +37,7 @@ public class Sender extends Thread implements ConnectionListener {
         startSendingMessages();
     }
 
-    private  void startSendingMessages() {
+    private void startSendingMessages() {
         Message msgToSend;
 
         try {
@@ -40,18 +45,16 @@ public class Sender extends Thread implements ConnectionListener {
                 msgToSend = messagesToSend.take();
                 sendToAllNeighbors(msgToSend);
             }
-        } catch (IOException e) {
-            onException(socket, e);
         } catch (InterruptedException e) {
             System.out.println("Sender thread was interrupted.");
-            onDisconnect(socket);
+            onException(socket, e);
         } finally {
             onDisconnect(socket);
         }
     }
 
     private void sendToAllNeighbors(Message msgToSend)  {
-        neighbors.forEach((nodeName, nodeInfo) -> {
+        neighbors.forEach((nodeId, nodeInfo) -> {
             try {
                 sendToRecipient(nodeInfo, msgToSend);
             } catch (IOException e) {
@@ -63,13 +66,15 @@ public class Sender extends Thread implements ConnectionListener {
     private void sendToRecipient(NodeInfo recipientNode, Message msgToSend) throws IOException {
         int recipientPort = recipientNode.getPort();
         InetAddress recipientAddress = recipientNode.getIpAddress();
-        String uuid = msgToSend.getUuid();
 
         DatagramPacket packetToSent = Message.buildMessagePacket(msgToSend, recipientPort, recipientAddress);
         socket.send(packetToSent);
 
-        messagesToBeConfirmed.put(uuid, packetToSent);
+        //uniqueMsgId: UUID+InetAddress+Port
+        String uniqueMsgId = Message.generateMessageId(msgToSend, packetToSent);
 
+        messagesToBeConfirmed.put(uniqueMsgId, System.currentTimeMillis());
+        sentMessages.put(uniqueMsgId, packetToSent);
     }
 
     @Override

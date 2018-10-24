@@ -4,7 +4,7 @@ import java.net.UnknownHostException;
 public class NodeInfo {
     private int port;
     private InetAddress ipAddress;
-    String id;
+    private String id;
 
     NodeInfo(int port, InetAddress ipAddress) {
         this.port = port;

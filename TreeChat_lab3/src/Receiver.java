@@ -2,20 +2,40 @@ import java.util.*;
 import java.net.*;
 import java.io.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class Receiver extends Thread implements ConnectionListener {
     private DatagramSocket socket = null;
     private DatagramPacket messagePacket;
 
-    private HashMap<String, Message> acceptedMessages;
-    private ConcurrentHashMap<String, DatagramPacket> messagesToBeConfirmed;
+    private HashMap<String, Long> acceptedMessages;
+    private ConcurrentHashMap<String, DatagramPacket> sentMessages;
+    private ConcurrentHashMap<String, Long> messagesToBeConfirmed;
+    private LinkedBlockingQueue<Message> messagesToSend;
+
+    private ConcurrentHashMap<String, NodeInfo> neighbors;
+
+    private Random randomizer;
+    private int lostPercentage = 0;
 
     Receiver(DatagramSocket socket,
-             ConcurrentHashMap<String, DatagramPacket> messagesToBeConfirmed) {
+             int lostPercentage,
+             LinkedBlockingQueue<Message> messagesToSend,
+             ConcurrentHashMap<String, NodeInfo> neighbors,
+             ConcurrentHashMap<String, Long> messagesToBeConfirmed,
+             ConcurrentHashMap<String, DatagramPacket> sentMessages) {
         this.socket = socket;
         this.messagePacket = new DatagramPacket(new byte[MessageInfo.BUFF_SIZE], MessageInfo.BUFF_SIZE);
-        this.acceptedMessages = new HashMap<>(1000);
+
+        this.acceptedMessages = new HashMap<>(10000);
+        this.sentMessages = sentMessages;
         this.messagesToBeConfirmed = messagesToBeConfirmed;
+        this.messagesToSend = messagesToSend;
+
+        this.neighbors = neighbors;
+
+        this.lostPercentage = lostPercentage;
+        this.randomizer = new Random();
     }
 
     @Override
@@ -23,38 +43,77 @@ public class Receiver extends Thread implements ConnectionListener {
         startReceivingMessages();
     }
 
-    void startReceivingMessages() {
+    private void startReceivingMessages() {
         try {
             while (!this.isInterrupted()) {
                 socket.receive(messagePacket);
                 onReceivingMessage(messagePacket);
             }
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException | InterruptedException e) {
             onException(socket, e);
         } finally {
             onDisconnect(socket);
         }
+    }
+
+    private void onReceivingMessage(DatagramPacket messagePacket) throws IOException, ClassNotFoundException, InterruptedException {
+        if (isDroppingMessage()) return;
+
+        byte[] receivedData;
+        Message incomingMessage;
+        MessageType messageType;
+        int cameFromPort;
+        InetAddress cameFromAddress;
+
+        receivedData  = messagePacket.getData();
+        incomingMessage = (Message)BytesUtil.toObject(receivedData);
+        messageType = incomingMessage.getMsgType();
+        cameFromPort = messagePacket.getPort();
+        cameFromAddress = messagePacket.getAddress();
+
+        switch (messageType) {
+            case TEXT_MESSAGE:
+                parseAsRegularMessage(incomingMessage, cameFromPort, cameFromAddress);
+                break;
+            case CONFIRMATION:
+                parseAsConfirmationMessage(incomingMessage, messagePacket);
+                break;
+            case I_AM_YOUR_SON:
+                parseAsJoiningMessage();
+                break;
+        }
+    }
+
+    private void parseAsJoiningMessage() {
 
     }
 
-    void onReceivingMessage(DatagramPacket messagePacket){
-        //Берем порт
-        int cameFromPort = messagePacket.getPort();
-        //Берем адрес
-        InetAddress cameFromAddress = messagePacket.getAddress();
-        //Берем сообщение
-        byte[] receivedData = messagePacket.getData();
-        //Выводим сообщение
-        //Отправляем подтверждение
-        sendConfirmation(cameFromPort, cameFromAddress);
-        //Рассылаем предкам и потомкам
-
+    private void parseAsConfirmationMessage(Message incomingMessage, DatagramPacket messagePacket) {
+        String uniqueMsgId = Message.generateMessageId(incomingMessage, messagePacket);
+        messagesToBeConfirmed.remove(uniqueMsgId);
     }
 
-    void sendConfirmation(int port, InetAddress ipAddress) {
+    private void parseAsRegularMessage(Message incomingMessage, int senderPort, InetAddress senderAddress) throws IOException, InterruptedException {
+        String msgUuid = incomingMessage.getUuid();
 
+        if(!acceptedMessages.containsKey(msgUuid)) {
+            Message.printMessage(incomingMessage);
+        }
+
+        acceptedMessages.put(msgUuid, System.currentTimeMillis());
+
+        sendConfirmation(incomingMessage, senderPort, senderAddress);
+        messagesToSend.put(incomingMessage);
     }
 
+    private boolean isDroppingMessage() {
+        return (randomizer.nextInt(100) < lostPercentage);
+    }
+
+    private void sendConfirmation(Message incomingMessage, int port, InetAddress ipAddress) throws IOException {
+        DatagramPacket packet = Message.buildUtilPacket(incomingMessage, MessageType.CONFIRMATION, port, ipAddress);
+        socket.send(packet);
+    }
 
     @Override
     public void onDisconnect(DatagramSocket socket) {

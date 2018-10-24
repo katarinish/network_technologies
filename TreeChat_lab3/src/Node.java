@@ -20,6 +20,10 @@ public class Node {
     private int lostPercentage;
 
     private LinkedBlockingQueue<Message> messagesToSend;
+    //String: UUID+InetAddress+Port  DatagramPacket: messagePacket
+    private ConcurrentHashMap<String, DatagramPacket> sentMessages;
+    //String: UUID+InetAddress+Port  Long: current time of sending msg
+    private ConcurrentHashMap<String, Long> messagesToBeConfirmed;
 
     Node(String nodeName, int lostPercentage, int port) throws UnknownHostException, SocketException {
         this.nodeName = nodeName;
@@ -27,7 +31,9 @@ public class Node {
         this.neighbors = new ConcurrentHashMap<>(100);
 
         this.lostPercentage = lostPercentage;
-        this.messagesToSend = new LinkedBlockingQueue<>(1000);
+        this.messagesToSend = new LinkedBlockingQueue<>(10000);
+        this.messagesToBeConfirmed = new ConcurrentHashMap<>(10000);
+        this.sentMessages = new ConcurrentHashMap<>(10000);
 
         this.port = port;
         this.ipAddress = InetAddress.getLocalHost();
@@ -43,11 +49,11 @@ public class Node {
 
     public void startMessaging(){
         try {
-            receiver = new Receiver(socket);
-            receiver.start();
-            sender = new Sender(socket, lostPercentage, messagesToSend, neighbors);
-            sender.start();
+            receiver = new Receiver(socket,lostPercentage, messagesToSend, neighbors, messagesToBeConfirmed, sentMessages);
+            sender = new Sender(socket, messagesToSend, neighbors, messagesToBeConfirmed, sentMessages);
 
+            receiver.start();
+            sender.start();
             startSendingMessages();
         } catch (InterruptedException e) {
             System.out.println("Thread was interrupted. Closing socket...");
@@ -69,7 +75,7 @@ public class Node {
             enteredText = scanner.nextLine();
             uuid = UUID.randomUUID().toString();
 
-            msgToSend = new Message(enteredText, uuid, this.nodeName);
+            msgToSend = new Message(enteredText, uuid, this.nodeName, MessageType.TEXT_MESSAGE);
             messagesToSend.put(msgToSend);
         }
 

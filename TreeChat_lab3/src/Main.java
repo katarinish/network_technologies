@@ -6,10 +6,21 @@ public class Main {
 
     public static void main(String[] args) {
 
-        Message newMsg = new Message("Hello world", "1", "Katarina");
+        Message newMsg = new Message("Hello world", "1", "Katarina", MessageType.TEXT_MESSAGE);
         try {
             byte[] data = BytesUtil.toByteArray(newMsg);
             Message unserialized = (Message)BytesUtil.toObject(data);
+
+            MessageType msgType = MessageType.CONFIRMATION;
+
+            switch (msgType) {
+                case TEXT_MESSAGE:
+                    System.out.println("ЭТО ТЕКСТОВОЕ СООБЩЕНИЕ");
+                    break;
+                case CONFIRMATION:
+                    System.out.println("ЭТО ПОДТВЕРЖДЕНИЕ СООБЩЕНИЯ");
+                    break;
+            }
 
 
             System.out.println(data.length);
