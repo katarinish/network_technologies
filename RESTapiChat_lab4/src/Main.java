@@ -1,6 +1,13 @@
+import java.io.IOException;
+
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("Hello World!");
+        try {
+            RestServer server = new RestServer(100);
+            server.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
