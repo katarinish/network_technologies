@@ -30,11 +30,23 @@ public class RestServer {
         lastUserActivity = new HashMap<>(usersCapacity);
     }
 
-    public static String getRequestData(HttpExchange exchange) {
+    public static JSONObject getRequestData(HttpExchange exchange) {
         InputStream inputStream = exchange.getRequestBody();
-        Scanner s = new Scanner(inputStream).useDelimiter("\\A");
 
-        return s.hasNext() ? s.next() : "";
+        Scanner s = new Scanner(inputStream).useDelimiter("\\A");
+        String jsonString = s.hasNext() ? s.next() : "";
+
+        return new JSONObject(jsonString);
+    }
+
+    public static void sendResponse(int statusCode, JSONObject responseData, HttpExchange exchange) throws IOException {
+        OutputStream outputStream = exchange.getResponseBody();
+        Headers headers = exchange.getResponseHeaders();
+        byte[] dataInBytes = responseData.toString().getBytes();
+
+        headers.add("Content-Type", "application/json");
+        exchange.sendResponseHeaders(statusCode, dataInBytes.length);
+        outputStream.write(dataInBytes);
     }
 
     //TODO: дополнительный поток который проверяет активность юзеров
