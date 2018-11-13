@@ -1,5 +1,4 @@
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.*;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -7,9 +6,6 @@ import java.io.*;
 import java.util.Map;
 
 public class LoginHandler implements HttpHandler {
-    private InputStream inputStream;
-    private OutputStream outputStream;
-
     private Map<String, Integer> chatUsernames;
     private Map<Integer, User> chatUsers;
     private Map<String, Long> lastUserActivity;
@@ -30,14 +26,13 @@ public class LoginHandler implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
         try {
             if (!exchange.getRequestMethod().equals("POST")) {
-                //TODO: кинуть 405 ошибку
+                RestServer.sendResponse(405, new JSONObject(), exchange);
+
                 return;
             }
 
             JSONObject reqData = RestServer.getRequestData(exchange);
-
             if (!validateLogin(reqData, exchange)) {
-                //TODO: HTTP 401 header WWW-Authenticate value Token realm='Username is already in use'.
                 return;
             }
 
@@ -45,15 +40,16 @@ public class LoginHandler implements HttpHandler {
         } finally {
             exchange.close();
         }
-
-
     }
 
-    private boolean validateLogin(JSONObject reqData, HttpExchange exchange) {
+    private boolean validateLogin(JSONObject reqData, HttpExchange exchange) throws IOException {
         try {
             String userLogin = reqData.getString("username");
             if (chatUsernames.containsKey(userLogin)) {
-                //TODO: HTTP 401 header WWW-Authenticate value Token realm='Username is already in use'.
+                exchange.getResponseHeaders().add("WWW-Authenticate",
+                        "Token realm='Username is already in use'");
+                RestServer.sendResponse(401, new JSONObject(), exchange);
+
                 return false;
             }
 
@@ -62,8 +58,10 @@ public class LoginHandler implements HttpHandler {
             chatUsers.put(connectedUsersCount, newCurrentUser);
             lastUserActivity.put(newCurrentUser.getAuthToken(), System.currentTimeMillis());
 
+            System.out.println("New user is connected to the chat: " + userLogin);
         } catch (JSONException e) {
-            //TODO: кинуть 400 - запрос не соответствует форамту
+            RestServer.sendResponse(400, new JSONObject(), exchange);
+
             return false;
         }
 
