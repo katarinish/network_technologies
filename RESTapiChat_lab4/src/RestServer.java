@@ -30,6 +30,13 @@ public class RestServer {
         lastUserActivity = new HashMap<>(usersCapacity);
     }
 
+    public static String getRequestData(HttpExchange exchange) {
+        InputStream inputStream = exchange.getRequestBody();
+        Scanner s = new Scanner(inputStream).useDelimiter("\\A");
+
+        return s.hasNext() ? s.next() : "";
+    }
+
     //TODO: дополнительный поток который проверяет активность юзеров
     public void start() {
         bindContext();
