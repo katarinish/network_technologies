@@ -1,3 +1,5 @@
+import org.json.JSONObject;
+
 import java.util.UUID;
 
 public class User {
@@ -28,5 +30,18 @@ public class User {
 
     public boolean isOnline() {
         return isOnline;
+    }
+
+    public JSONObject toJson() {
+        JSONObject jsonObject = new JSONObject();
+
+        jsonObject
+                .put("login", this.login)
+                .put("id", this.id)
+                .put("online", this.isOnline)
+                .put("authToken", this.authToken);
+
+        return jsonObject;
+
     }
 }
