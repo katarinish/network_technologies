@@ -26,7 +26,8 @@ public class LoginHandler implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
         try {
             if (!exchange.getRequestMethod().equals("POST")) {
-                RestServer.sendResponse(StatusCode.METHOD_NOT_ALLOWED, new JSONObject(), exchange);
+                RestServer.sendResponse(StatusCode.METHOD_NOT_ALLOWED,
+                        new JSONObject(), exchange);
 
                 return;
             }
@@ -42,13 +43,15 @@ public class LoginHandler implements HttpHandler {
         }
     }
 
-    private boolean validateLogin(JSONObject reqData, HttpExchange exchange) throws IOException {
+    private boolean validateLogin(JSONObject reqData, HttpExchange exchange)
+            throws IOException {
         try {
             String userLogin = reqData.getString("username");
             if (chatUsernames.containsKey(userLogin)) {
                 exchange.getResponseHeaders().add("WWW-Authenticate",
                         "Token realm='Username is already in use'");
-                RestServer.sendResponse(StatusCode.UNAUTHORIZED, new JSONObject(), exchange);
+                RestServer.sendResponse(StatusCode.UNAUTHORIZED,
+                        new JSONObject(), exchange);
 
                 return false;
             }

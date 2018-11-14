@@ -19,17 +19,6 @@ public class RestServer {
     // Key<AuthToken> Value<Time>
     private Map<String, Long> lastUserActivity;
 
-
-
-    public RestServer(int usersCapacity) throws IOException {
-        socketAddress = new InetSocketAddress(InetAddress.getByName(null), 8888);
-        server = HttpServer.create(socketAddress, 0);
-
-        chatUsernames = new HashMap<>(usersCapacity);
-        chatUsers = new HashMap<>(usersCapacity);
-        lastUserActivity = new HashMap<>(usersCapacity);
-    }
-
     public static JSONObject getRequestData(HttpExchange exchange) {
         InputStream inputStream = exchange.getRequestBody();
 
@@ -49,6 +38,15 @@ public class RestServer {
         outputStream.write(dataInBytes);
     }
 
+    public RestServer(int usersCapacity) throws IOException {
+        socketAddress = new InetSocketAddress(InetAddress.getByName(null), 8888);
+        server = HttpServer.create(socketAddress, 0);
+
+        chatUsernames = new HashMap<>(usersCapacity);
+        chatUsers = new HashMap<>(usersCapacity);
+        lastUserActivity = new HashMap<>(usersCapacity);
+    }
+
     //TODO: дополнительный поток который проверяет активность юзеров
     public void start() {
         bindContext();
@@ -61,6 +59,9 @@ public class RestServer {
 
     private void bindContext() {
         server.createContext("/login", new LoginHandler(chatUsernames,
+                chatUsers,
+                lastUserActivity));
+        server.createContext("/logout", new LogoutHandler(chatUsernames,
                 chatUsers,
                 lastUserActivity));
 
