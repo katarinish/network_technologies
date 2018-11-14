@@ -26,7 +26,7 @@ public class LoginHandler implements HttpHandler {
     public void handle(HttpExchange exchange) throws IOException {
         try {
             if (!exchange.getRequestMethod().equals("POST")) {
-                RestServer.sendResponse(405, new JSONObject(), exchange);
+                RestServer.sendResponse(StatusCode.METHOD_NOT_ALLOWED, new JSONObject(), exchange);
 
                 return;
             }
@@ -36,7 +36,7 @@ public class LoginHandler implements HttpHandler {
                 return;
             }
 
-            RestServer.sendResponse(200, newCurrentUser.toJson(), exchange);
+            RestServer.sendResponse(StatusCode.OK, newCurrentUser.toJson(), exchange);
         } finally {
             exchange.close();
         }
@@ -48,7 +48,7 @@ public class LoginHandler implements HttpHandler {
             if (chatUsernames.containsKey(userLogin)) {
                 exchange.getResponseHeaders().add("WWW-Authenticate",
                         "Token realm='Username is already in use'");
-                RestServer.sendResponse(401, new JSONObject(), exchange);
+                RestServer.sendResponse(StatusCode.UNAUTHORIZED, new JSONObject(), exchange);
 
                 return false;
             }
@@ -60,7 +60,7 @@ public class LoginHandler implements HttpHandler {
 
             System.out.println("New user is connected to the chat: " + userLogin);
         } catch (JSONException e) {
-            RestServer.sendResponse(400, new JSONObject(), exchange);
+            RestServer.sendResponse(StatusCode.BAD_REQUEST, new JSONObject(), exchange);
 
             return false;
         }

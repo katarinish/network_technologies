@@ -39,13 +39,13 @@ public class RestServer {
         return new JSONObject(jsonString);
     }
 
-    public static void sendResponse(int statusCode, JSONObject responseData, HttpExchange exchange) throws IOException {
+    public static void sendResponse(StatusCode statusCode, JSONObject responseData, HttpExchange exchange) throws IOException {
         OutputStream outputStream = exchange.getResponseBody();
         Headers headers = exchange.getResponseHeaders();
         byte[] dataInBytes = responseData.toString().getBytes();
 
         headers.add("Content-Type", "application/json");
-        exchange.sendResponseHeaders(statusCode, dataInBytes.length);
+        exchange.sendResponseHeaders(statusCode.getCode(), dataInBytes.length);
         outputStream.write(dataInBytes);
     }
 
