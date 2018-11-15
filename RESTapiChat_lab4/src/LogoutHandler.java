@@ -6,14 +6,17 @@ import java.io.*;
 import java.util.Map;
 
 public class LogoutHandler implements HttpHandler{
+    private Map<String, String> authorizedUsers;
     private Map<String, Integer> chatUsernames;
     private Map<Integer, User> chatUsers;
     private Map<String, Long> lastUserActivity;
 
 
-    public LogoutHandler(Map<String, Integer> chatUsernames,
+    public LogoutHandler(Map<String, String> authorizedUsers,
+                         Map<String, Integer> chatUsernames,
                          Map<Integer,User> chatUsers,
                          Map<String, Long> lastUserActivity) {
+        this.authorizedUsers = authorizedUsers;
         this.chatUsernames = chatUsernames;
         this.chatUsers = chatUsers;
         this.lastUserActivity = lastUserActivity;

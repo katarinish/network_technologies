@@ -10,6 +10,9 @@ public class RestServer {
     private InetSocketAddress socketAddress;
     private HttpServer server;
 
+    // Key<auth_token> Value<login>
+    private Map<String, String> authorizedUsers;
+
     // Key<login> Value<id>
     private Map<String, Integer> chatUsernames;
 
@@ -44,6 +47,7 @@ public class RestServer {
         socketAddress = new InetSocketAddress(InetAddress.getByName(null), 8888);
         server = HttpServer.create(socketAddress, 0);
 
+        authorizedUsers = new HashMap<>(usersCapacity);
         chatUsernames = new HashMap<>(usersCapacity);
         chatUsers = new HashMap<>(usersCapacity);
         lastUserActivity = new HashMap<>(usersCapacity);
@@ -60,10 +64,12 @@ public class RestServer {
     }
 
     private void bindContext() {
-        server.createContext("/login", new LoginHandler(chatUsernames,
+        server.createContext("/login", new LoginHandler(authorizedUsers,
+                chatUsernames,
                 chatUsers,
                 lastUserActivity));
-        server.createContext("/logout", new LogoutHandler(chatUsernames,
+        server.createContext("/logout", new LogoutHandler(authorizedUsers,
+                chatUsernames,
                 chatUsers,
                 lastUserActivity));
 

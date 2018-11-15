@@ -6,6 +6,7 @@
     import java.util.Map;
 
     public class LoginHandler implements HttpHandler {
+        private Map<String, String> authorizedUsers;
         private Map<String, Integer> chatUsernames;
         private Map<Integer, User> chatUsers;
         private Map<String, Long> lastUserActivity;
@@ -14,9 +15,11 @@
         private User newCurrentUser;
 
 
-        public LoginHandler(Map<String, Integer> chatUsernames,
+        public LoginHandler(Map<String, String> authorizedUsers,
+                            Map<String, Integer> chatUsernames,
                             Map<Integer, User> chatUsers,
                             Map<String, Long> lastUserActivity) {
+            this.authorizedUsers = authorizedUsers;
             this.chatUsernames = chatUsernames;
             this.chatUsers = chatUsers;
             this.lastUserActivity = lastUserActivity;
