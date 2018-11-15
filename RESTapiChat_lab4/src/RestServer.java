@@ -19,7 +19,7 @@ public class RestServer {
     // Key<AuthToken> Value<Time>
     private Map<String, Long> lastUserActivity;
 
-    public static JSONObject getRequestData(HttpExchange exchange) {
+    public static JSONObject getRequestData(HttpExchange exchange) throws JSONException {
         InputStream inputStream = exchange.getRequestBody();
 
         Scanner s = new Scanner(inputStream).useDelimiter("\\A");
@@ -28,7 +28,9 @@ public class RestServer {
         return new JSONObject(jsonString);
     }
 
-    public static void sendResponse(StatusCode statusCode, JSONObject responseData, HttpExchange exchange) throws IOException {
+    public static void sendResponse(StatusCode statusCode,
+                                    JSONObject responseData,
+                                    HttpExchange exchange) throws IOException {
         OutputStream outputStream = exchange.getResponseBody();
         Headers headers = exchange.getResponseHeaders();
         byte[] dataInBytes = responseData.toString().getBytes();
