@@ -93,6 +93,8 @@ public class RestServer {
                 chatUsernames,
                 chatUsers,
                 lastUserActivity));
+        server.createContext("/users", new UsersHandler(authorizedUsers,
+                chatUsers));
 
         server.setExecutor(null);
     }

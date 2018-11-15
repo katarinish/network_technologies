@@ -6,7 +6,7 @@ public class User {
     private String login;
     private int id;
     private String authToken;
-    private boolean isOnline;
+    private Boolean isOnline;
 
     public User(String login, int id ) {
         this.login = login;
@@ -29,7 +29,7 @@ public class User {
     }
 
     public boolean isOnline() {
-        return isOnline;
+        return !(isOnline == null || !isOnline);
     }
 
     public JSONObject toJson() {
@@ -45,7 +45,14 @@ public class User {
 
     }
 
-    public void setOnline(boolean online) {
+    public JSONObject getInfo() {
+        JSONObject fullInfo = this.toJson();
+        fullInfo.remove("authToken");
+
+        return fullInfo;
+    }
+
+    public void setOnline(Boolean online) {
         isOnline = online;
     }
 }
