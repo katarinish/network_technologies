@@ -44,4 +44,8 @@ public class User {
         return jsonObject;
 
     }
+
+    public void setOnline(boolean online) {
+        isOnline = online;
+    }
 }

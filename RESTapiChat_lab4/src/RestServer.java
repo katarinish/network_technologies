@@ -43,6 +43,27 @@ public class RestServer {
         outputStream.write(dataInBytes);
     }
 
+    public static String validateAuthToken(HttpExchange exchange, Map authorizedUsers)
+            throws IOException {
+        List authHeader = exchange.getRequestHeaders().get("Authorization");
+        if (authHeader == null) {
+            RestServer.sendResponse(StatusCode.UNAUTHORIZED, new JSONObject(),
+                    exchange);
+
+            return null;
+        }
+
+        String tokenToValidate = (String)authHeader.get(0);
+        if (!authorizedUsers.containsKey(tokenToValidate)) {
+            RestServer.sendResponse(StatusCode.FORBIDDEN, new JSONObject(),
+                    exchange);
+
+            return null;
+        }
+
+        return tokenToValidate;
+    }
+
     public RestServer(int usersCapacity) throws IOException {
         socketAddress = new InetSocketAddress(InetAddress.getByName(null), 8888);
         server = HttpServer.create(socketAddress, 0);

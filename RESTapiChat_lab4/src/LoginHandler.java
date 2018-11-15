@@ -38,9 +38,11 @@
                 JSONObject reqData = RestServer.getRequestData(exchange);
                 if (!validateLogin(reqData, exchange)) return;
 
-                RestServer.sendResponse(StatusCode.OK, newCurrentUser.toJson(), exchange);
+                RestServer.sendResponse(StatusCode.OK, newCurrentUser.toJson(),
+                        exchange);
             } catch (JSONException e) {
-                RestServer.sendResponse(StatusCode.BAD_REQUEST, new JSONObject(), exchange);
+                RestServer.sendResponse(StatusCode.BAD_REQUEST, new JSONObject(),
+                        exchange);
             } finally {
                 exchange.close();
             }
@@ -60,6 +62,7 @@
             }
 
             newCurrentUser = new User(userLogin, ++connectedUsersCount);
+            authorizedUsers.put(newCurrentUser.getAuthToken(), userLogin);
             chatUsernames.put(userLogin, connectedUsersCount);
             chatUsers.put(connectedUsersCount, newCurrentUser);
             lastUserActivity.put(newCurrentUser.getAuthToken(), System.currentTimeMillis());

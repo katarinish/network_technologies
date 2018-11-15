@@ -1,5 +1,4 @@
 import com.sun.net.httpserver.*;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
@@ -33,19 +32,30 @@ public class LogoutHandler implements HttpHandler{
                 return;
             }
 
-            validateAuthToken(exchange);
+            String authToken = RestServer.validateAuthToken(exchange, authorizedUsers);
+            if (authToken == null) return;
 
+            removeUser(authToken);
+            RestServer.sendResponse(StatusCode.OK, createGoodByeMsg(),
+                    exchange);
         } finally {
             exchange.close();
         }
 
     }
 
-    private boolean validateAuthToken(HttpExchange exchange) {
-        Headers reqHeaders = exchange.getRequestHeaders();
-        String tokenToValidate = reqHeaders.get("Authorization").get(0);
+    private void removeUser(String authToken) {
+        String usernameToDelete = authorizedUsers.get(authToken);
+        int userIdToDelete = chatUsernames.get(usernameToDelete);
+        User userToDelete = chatUsers.get(userIdToDelete);
 
-        System.out.println(tokenToValidate);
-        return true;
+        authorizedUsers.remove(authToken);
+        chatUsernames.remove(usernameToDelete);
+        lastUserActivity.remove(authToken);
+        userToDelete.setOnline(false);
+    }
+
+    private JSONObject createGoodByeMsg() {
+        return new JSONObject().put("message", "Good bye!");
     }
 }
