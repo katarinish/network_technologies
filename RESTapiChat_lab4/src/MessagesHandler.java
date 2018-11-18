@@ -41,6 +41,17 @@ public class MessagesHandler implements HttpHandler {
                 case "GET":
                     Map queryParams = parseQueryParameters(exchange);
 
+                    JSONObject respData = messagesList(queryParams);
+                    if (respData == null) {
+                        RestServer.sendResponse(StatusCode.BAD_REQUEST, new JSONObject(),
+                                exchange);
+
+                        return;
+                    }
+
+                    RestServer.sendResponse(StatusCode.OK, respData,
+                            exchange);
+
                     break;
 
                 case "POST":
@@ -61,18 +72,16 @@ public class MessagesHandler implements HttpHandler {
     }
 
     private Map parseQueryParameters(HttpExchange exchange) {
-        Map<String, String> queryParameters = new HashMap<>();
+        Map<String, Integer> queryParameters = new HashMap<>();
         String query = exchange.getRequestURI().getQuery();
 
         System.out.println("reqURIQuery" + query);
-        if (query == null || query.equals("")) return null;
+        if (query == null || query.equals("")) return queryParameters;
 
         for (String param : query.split("&")) {
             String pair[] = param.split("=");
-            if (pair.length>1) {
-                queryParameters.put(pair[0], pair[1]);
-            } else {
-                queryParameters.put(pair[0], "");
+            if (pair.length > 1) {
+                queryParameters.put(pair[0], Integer.parseInt(pair[1]));
             }
         }
 
@@ -80,7 +89,21 @@ public class MessagesHandler implements HttpHandler {
     }
 
     private JSONObject messagesList(Map queryParameters) {
-        return new JSONObject();
+        JSONObject msgList = new JSONObject();
+        int i;
+        int j;
+
+        int offset = (Integer)queryParameters.getOrDefault("offset", DEFAULT_OFFSET);
+        int count = (Integer)queryParameters.getOrDefault("count", DEFAULT_COUNT);
+        int listSize = messages.size();
+
+        if (listSize < offset) return null;
+
+        for (j = 0, i = offset; j < count && i < listSize ; ++j, ++i) {
+            msgList.append("messages", messages.get(i).toJson());
+        }
+
+        return msgList;
     }
 
     private void addMessageToList(JSONObject reqData, String authToken)
