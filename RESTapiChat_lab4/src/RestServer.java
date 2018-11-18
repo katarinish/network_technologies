@@ -22,6 +22,9 @@ public class RestServer {
     // Key<AuthToken> Value<Time>
     private Map<String, Long> lastUserActivity;
 
+    //All messages sent from clients
+    private ArrayList<Message> messages;
+
     public static JSONObject getRequestData(HttpExchange exchange) throws JSONException {
         InputStream inputStream = exchange.getRequestBody();
 
@@ -72,6 +75,7 @@ public class RestServer {
         chatUsernames = new HashMap<>(usersCapacity);
         chatUsers = new HashMap<>(usersCapacity);
         lastUserActivity = new HashMap<>(usersCapacity);
+        messages = new ArrayList<>(usersCapacity * 100);
     }
 
     //TODO: дополнительный поток который проверяет активность юзеров
@@ -95,6 +99,11 @@ public class RestServer {
                 lastUserActivity));
         server.createContext("/users", new UsersHandler(authorizedUsers,
                 chatUsers));
+        server.createContext("/messages", new MessagesHandler(authorizedUsers,
+                chatUsernames,
+                chatUsers,
+                lastUserActivity,
+                messages));
 
         server.setExecutor(null);
     }

@@ -4,6 +4,8 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class UsersHandler implements HttpHandler {
     private Map<String, String> authorizedUsers;
@@ -28,13 +30,37 @@ public class UsersHandler implements HttpHandler {
             String authToken = RestServer.validateAuthToken(exchange, authorizedUsers);
             if (authToken == null) return;
 
-            RestServer.sendResponse(StatusCode.OK, activeUsersList(),
-                    exchange);
+            int userId = parseUserId(exchange);
+            if (userId < 0) {
+                RestServer.sendResponse(StatusCode.OK, activeUsersList(),
+                        exchange);
 
+                return;
+            }
+
+            if(!validateUserId(userId)) {
+                RestServer.sendResponse(StatusCode.BAD_REQUEST, new JSONObject(),
+                        exchange);
+
+                return;
+            }
+
+            RestServer.sendResponse(StatusCode.OK, getUserInfo(userId),
+                    exchange);
         } finally {
             exchange.close();
 
         }
+    }
+
+    private int parseUserId(HttpExchange exchange) {
+        String requestPath = exchange.getRequestURI().getRawPath();
+
+        String regexp = "\\d+$";
+        Pattern pattern = Pattern.compile(regexp);
+        Matcher matcher = pattern.matcher(requestPath);
+
+        return matcher.find() ? Integer.parseInt(matcher.group()) : -1 ;
     }
 
     private JSONObject activeUsersList() {
@@ -51,4 +77,11 @@ public class UsersHandler implements HttpHandler {
         return usersList;
     }
 
+    private boolean validateUserId(int userId) {
+        return chatUsers.containsKey(userId);
+    }
+
+    private JSONObject getUserInfo(int userId) {
+        return chatUsers.get(userId).getInfo();
+    }
 }
