@@ -33,6 +33,13 @@ public class MessagesHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         try {
+            if (exchange.getRequestMethod().equals("OPTIONS")){
+                RestServer.sendResponse(StatusCode.OK,
+                        new JSONObject(), exchange);
+
+                return;
+            }
+
             String authToken = RestServer.validateAuthToken(exchange, authorizedUsers);
             if (authToken == null) return;
 

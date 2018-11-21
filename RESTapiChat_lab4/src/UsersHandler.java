@@ -20,6 +20,13 @@ public class UsersHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         try {
+            if (exchange.getRequestMethod().equals("OPTIONS")){
+                RestServer.sendResponse(StatusCode.OK,
+                        new JSONObject(), exchange);
+
+                return;
+            }
+
             if (!exchange.getRequestMethod().equals("GET")) {
                 RestServer.sendResponse(StatusCode.METHOD_NOT_ALLOWED,
                         new JSONObject(), exchange);

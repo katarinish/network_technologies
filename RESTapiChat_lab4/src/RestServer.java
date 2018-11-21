@@ -42,6 +42,9 @@ public class RestServer {
         byte[] dataInBytes = responseData.toString().getBytes();
 
         headers.add("Content-Type", "application/json");
+        headers.add("Access-Control-Allow-Origin", "*");
+        headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization");
+        headers.add("Access-Control-Allow-Methods", "POST, GET");
         exchange.sendResponseHeaders(statusCode.getCode(), dataInBytes.length);
         outputStream.write(dataInBytes);
     }
