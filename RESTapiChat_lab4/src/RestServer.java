@@ -99,7 +99,8 @@ public class RestServer {
         server.createContext("/logout", new LogoutHandler(authorizedUsers,
                 chatUsernames,
                 chatUsers,
-                lastUserActivity));
+                lastUserActivity,
+                messages));
         server.createContext("/users", new UsersHandler(authorizedUsers,
                 chatUsers));
         server.createContext("/messages", new MessagesHandler(authorizedUsers,

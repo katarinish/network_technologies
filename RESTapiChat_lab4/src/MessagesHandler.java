@@ -82,7 +82,6 @@ public class MessagesHandler implements HttpHandler {
         Map<String, Integer> queryParameters = new HashMap<>();
         String query = exchange.getRequestURI().getQuery();
 
-        System.out.println("reqURIQuery" + query);
         if (query == null || query.equals("")) return queryParameters;
 
         for (String param : query.split("&")) {
