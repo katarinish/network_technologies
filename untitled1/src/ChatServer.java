@@ -4,13 +4,18 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.json.*;
+
 @ServerEndpoint("/ws")
 public class ChatServer {
     private Map<String, String> usernames = new HashMap<String, String>();
 
     @OnOpen
     public void open(Session session) throws IOException, EncodeException {
-        session.getBasicRemote().sendText("(Server): Welcome to the chat room. Please state your username to begin.");
+        JSONObject msg = new JSONObject();
+        msg.put("author", "Server");
+        msg.put("message", "Welcome to the chat room. Please state your username to begin.");
+        session.getBasicRemote().sendText(msg.toString());
 
     }
 
@@ -30,18 +35,20 @@ public class ChatServer {
         String userId = session.getId();
 
         if (usernames.containsKey(userId)) {
-            String username = usernames.get(userId);
             for (Session peer : session.getOpenSessions())
-                peer.getBasicRemote().sendText("(" + username + "): " + message);
+                peer.getBasicRemote().sendText(message);
         } else {
-            if (usernames.containsValue(message) || message.toLowerCase().equals("server"))
-                session.getBasicRemote().sendText("(Server): That username is already in use. Please try again.");
+            if (usernames.containsValue(message) || message.toLowerCase().equals("server")) {
+                JSONObject msg = new JSONObject();
+                msg.put("author", "Server");
+                msg.put("message", "Username is already in use");
+                session.getBasicRemote().sendText(msg.toString());
+            }
             else {
                 usernames.put(userId, message);
-                session.getBasicRemote().sendText("(Server): Welcome, " + message + "!");
-                for (Session peer : session.getOpenSessions())
-                    if (!peer.getId().equals(userId))
-                        peer.getBasicRemote().sendText("(Server): " + message + " joined the chat room.");
+                for (Session peer : session.getOpenSessions()){
+                    peer.getBasicRemote().sendText(message);
+                }
             }
         }
     }

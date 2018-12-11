@@ -131,7 +131,7 @@ window.addEventListener("DOMContentLoaded", function() {
         };
 
         socket.onmessage = function (event) {
-            const msg = event.data;
+            const msg = JSON.parse(event.data);
             console.log(event.data);
 
             let item = `
