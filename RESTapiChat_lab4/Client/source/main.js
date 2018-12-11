@@ -108,6 +108,43 @@ window.addEventListener("DOMContentLoaded", function() {
         });
     }
 
+    const createWebSocketConnection = () => {
+        var socket = new WebSocket("ws://localhost:8080/untitled1_war_exploded/ws");
+        appState.socket = socket;
+
+        socket.onopen = function() {
+            console.log("Соединение установлено.");
+        };
+            
+        socket.onclose = function(event) {
+            if (event.wasClean) {
+                console.log('Соединение закрыто чисто');
+            } else {
+                console.log('Обрыв соединения');
+            }
+
+            console.log('Код: ' + event.code + ' причина: ' + event.reason);
+        };
+            
+        socket.onerror = function(error) {
+            console.log("Ошибка " + error.message);
+        };
+
+        socket.onmessage = function (event) {
+            const msg = event.data;
+            console.log(event.data);
+
+            let item = `
+                    <li class="message__item">
+                        <div class="message__author">${msg.author}</div>
+                        <div class="message__text">${msg.message}</div>
+                    </li>
+                `;
+    
+            elements.messageList.insertAdjacentHTML('beforeend', item);
+        }
+    }
+
     const loginRequestListener = xhr => {
         if (xhr.readyState != 4) return;
 
@@ -115,7 +152,8 @@ window.addEventListener("DOMContentLoaded", function() {
             alert("Пользователь успешно авторизован!");
             setNewUser(xhr.response);
 
-            getMsgsHistory();
+            createWebSocketConnection();
+            // getMsgsHistory();
         } else {
             appState.isReady = false;
             elements.loginInput.value = ''
@@ -182,14 +220,22 @@ window.addEventListener("DOMContentLoaded", function() {
         const senderInput = elements.senderInput.value;
         elements.senderInput.value = '';
 
-        sendRequest({
-            method: "POST",
-            url: requestsInfo.messages,
-            data: `{
-                "message": "${senderInput}"
-            }`,
-            stateChangeListener: senderRequestListener,
-        });
+        const data = `{
+            "message": "${senderInput}",
+            "author": "${appState.login}"
+        }`;
+
+        appState.socket.send(data);
+
+        // sendRequest({
+        //     method: "POST",
+        //     url: requestsInfo.messages,
+        //     data: `{
+        //         "message": "${senderInput}",
+        //         "username": "${appState.login}"
+        //     }`,
+        //     stateChangeListener: senderRequestListener,
+        // });
 
     }
 
@@ -208,6 +254,7 @@ window.addEventListener("DOMContentLoaded", function() {
             stateChangeListener: activeRequestListener,
         });
     }
+
     
     elements.loginForm.addEventListener('submit', e => {
         e.preventDefault();
@@ -223,5 +270,7 @@ window.addEventListener("DOMContentLoaded", function() {
         e.preventDefault();
         controlLogout();
     });
+
+    // createWebSocketConnection();
 	
 });
